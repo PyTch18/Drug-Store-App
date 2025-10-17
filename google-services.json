@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "118533765535",
+    "firebase_url": "https://drug-store-9bfce-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "drug-store-9bfce",
+    "storage_bucket": "drug-store-9bfce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118533765535:android:ec67e0d67574405c44a5aa",
+        "android_client_info": {
+          "package_name": "com.example.DrugStore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSnv0WAjsGSHZ7dRH9Cc7CZPf5O_hQEqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
