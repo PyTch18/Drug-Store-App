@@ -7,8 +7,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import androidx.compose.material3.Typography
-
+import com.example.drugstore.ui.theme.Apptypography
 // Using your defined colors for the light theme
 private val LightColorScheme = lightColorScheme(
     primary = Black, // Primary elements like buttons
@@ -38,7 +37,7 @@ fun DrugStoreTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Apptypography,
         content = content
     )
 }

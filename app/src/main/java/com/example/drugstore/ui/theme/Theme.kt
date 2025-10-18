@@ -52,7 +52,7 @@ fun DrugStoreTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Apptypography,
         content = content
     )
 }

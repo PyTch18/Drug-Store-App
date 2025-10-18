@@ -4,17 +4,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxSizeimport
 import androidx.compose.material3.Scaffold
-
-androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.drugstore.ui.home.HomeScreen
+import com.example.drugstore.ui.homeimport.HomeScreen
 import com.example.drugstore.ui.login.LoginScreen
 import com.example.drugstore.ui.theme.DrugStoreTheme
 
