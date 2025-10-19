@@ -71,4 +71,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
     implementation(files("C:\\Users\\Amr Azouz\\Downloads\\heresdk-explore-android-4.24.2.0.232174\\heresdk-explore-android-4.24.2.0.232174\\heresdk-explore-android-4.24.2.0.232174.aar"))
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }
