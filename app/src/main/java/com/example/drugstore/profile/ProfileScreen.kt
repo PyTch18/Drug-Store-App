@@ -39,7 +39,7 @@ fun ProfileScreen(
             is UserProfile.PatientProfile -> {
                 val patient = state.patient
                 ProfileContent(
-                    name = patient.Name,
+                    name = patient.name,
                     email = patient.email,
                     role = "Patient",
                     details = listOf(

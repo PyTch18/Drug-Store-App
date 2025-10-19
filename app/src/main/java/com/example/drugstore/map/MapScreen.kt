@@ -40,7 +40,6 @@ fun MapScreen() {
     val context = LocalContext.current
     var hasLocationPermission by remember { mutableStateOf(false) }
 
-    // This will be used to request location permissions
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -53,7 +52,6 @@ fun MapScreen() {
         }
     }
 
-    // Request permissions when the screen is first composed
     LaunchedEffect(Unit) {
         locationPermissionLauncher.launch(
             arrayOf(
@@ -66,58 +64,67 @@ fun MapScreen() {
     Scaffold(
         topBar = {
             MapSearchBar { query ->
-                // Search logic will be passed here, but is not yet implemented
                 Toast.makeText(context, "Searching for: $query", Toast.LENGTH_SHORT).show()
             }
         }
     ) { paddingValues ->
+        // Pass the padding to HereMap
         HereMap(modifier = Modifier.padding(paddingValues))
     }
 }
+
 @Composable
 fun HereMap(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val mapView = remember { MapView(context) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    DisposableEffect(lifecycle, mapView) {        val lifecycleObserver = LifecycleEventObserver { _, event ->
-        when (event) {
-            Lifecycle.Event.ON_RESUME -> mapView.onResume()
-            Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-            else -> {}
-        }
+    // --- THIS IS THE CRUCIAL FIX ---
+    // We create the MapView inside a remember block and pass it to DisposableEffect
+    val mapView = remember {
+        // We still initialize the SDK first for safety
+        initializeHereSdk(context)
+        MapView(context)
     }
+
+    // This effect will tie the MapView's lifecycle to the composable's lifecycle
+    DisposableEffect(lifecycle, mapView) {
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            // Forward lifecycle events to the MapView
+            when (event) {
+                Lifecycle.Event.ON_CREATE -> mapView.onCreate(null) // Call onCreate here
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> {}
+            }
+        }
+
         lifecycle.addObserver(lifecycleObserver)
 
         onDispose {
             lifecycle.removeObserver(lifecycleObserver)
-            mapView.onDestroy()
+            // It's still good practice to dispose the engine here
             SDKNativeEngine.getSharedInstance()?.dispose()
             Log.d("HereMap", "HERE SDK instance disposed.")
         }
     }
 
     AndroidView(
-        factory = {
-            Log.d("HereMap", "Initializing HERE MapView...")
-            initializeHereSdk(context)
-            mapView.apply {
-                mapScene.loadScene(MapScheme.NORMAL_DAY) { mapError ->
-                    if (mapError == null) {
-                        val defaultLocation = GeoCoordinates(30.0444, 31.2357) // Cairo
+        factory = { mapView }, // The factory now just returns the already-created view
+        update = { view ->
+            // This is where you would update the view on recomposition if needed
+            Log.d("HereMap", "AndroidView update block.")
 
-                        // --- THIS IS THE CORRECT AND FINAL IMPLEMENTATION ---
-                        // The HERE SDK requires a MapMeasure object for distance.
-                        // We must use this version of the lookAt function.
-                        val distanceInMeters = MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 10000.0)
-                        mapView.camera.lookAt(defaultLocation, distanceInMeters)
-                        // --- END OF FIX ---
-
-                        addMapMarker(mapView, defaultLocation)
-                        Log.d("HereMap", "Map scene loaded successfully.")
-                    }  else {
-                        Log.e("HereMap", "Error loading map scene: $mapError")
-                    }
+            // It's safer to load the scene here as part of the update/setup logic
+            view.mapScene.loadScene(MapScheme.NORMAL_DAY) { mapError ->
+                if (mapError == null) {
+                    val defaultLocation = GeoCoordinates(30.0444, 31.2357) // Cairo
+                    val distanceInMeters = MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 10000.0)
+                    view.camera.lookAt(defaultLocation, distanceInMeters)
+                    addMapMarker(view, defaultLocation)
+                    Log.d("HereMap", "Map scene loaded successfully.")
+                } else {
+                    Log.e("HereMap", "Error loading map scene: $mapError")
                 }
             }
         },
@@ -126,29 +133,35 @@ fun HereMap(modifier: Modifier = Modifier) {
 }
 
 
-
 // Helper function to initialize the SDK
-private fun initializeHereSdk(context: Context) {
-    try {
-        if (SDKNativeEngine.getSharedInstance() == null) {
-            val appInfo = context.packageManager.getApplicationInfo(context.packageName, 0)
-            val accessKeyId: String? = appInfo.metaData.getString("com.here.sdk.access_key_id")
-            val accessKeySecret: String? = appInfo.metaData.getString("com.here.sdk.access_key_secret")
+// In MapScreen.kt
 
-            if (accessKeyId.isNullOrBlank() || accessKeySecret.isNullOrBlank()) {
-                throw RuntimeException("HERE SDK credentials not found in AndroidManifest.xml")
-            }
-            val authMode = AuthenticationMode.withKeySecret(accessKeyId, accessKeySecret)
-            val options = SDKOptions(authMode)
+private fun initializeHereSdk(context: Context) {    try {
+    if (SDKNativeEngine.getSharedInstance() == null) {
+        val appInfo = context.packageManager.getApplicationInfo(context.packageName, 0)
+        val metaData = appInfo.metaData // Get the bundle first
 
-            SDKNativeEngine.makeSharedInstance(context, options)
-            Log.d("HereMap", "HERE SDK initialized.")
+
+        val accessKeyId = "MldG0F9XjjAl8uqYUzR0jA"
+        val accessKeySecret = "m6QBHBWJ5aJsTjxyLQA20lnZiuP94NmRJfVbZxLBYWhsb1GdOEkqpAtbNFAWLx2Xh9zGg4anHwXC0pdXpgIoDw"
+
+        if (accessKeyId.isNullOrBlank() || accessKeySecret.isNullOrBlank()) {
+            throw RuntimeException("HERE SDK credentials are null or blank in AndroidManifest.xml")
         }
-    } catch (e: Exception) {
-        Log.e("HereMap", "Failed to initialize HERE SDK: ${e.message}", e)
-        Toast.makeText(context, "Failed to initialize map services. Check credentials.", Toast.LENGTH_LONG).show()
+
+        val authMode = AuthenticationMode.withKeySecret(accessKeyId, accessKeySecret)
+        val options = SDKOptions(authMode)
+
+        SDKNativeEngine.makeSharedInstance(context, options)
+        Log.d("HereMap", "HERE SDK initialized.")
     }
+} catch (e: Exception) {
+    // This will now give a much clearer error message in Logcat
+    Log.e("HereMap", "Failed to initialize HERE SDK: ${e.message}", e)
+    Toast.makeText(context, "Failed to initialize map services. Check Manifest and credentials.", Toast.LENGTH_LONG).show()
 }
+}
+
 
 // Helper function to add markers
 private fun addMapMarker(mapView: MapView, geoCoordinates: GeoCoordinates) {

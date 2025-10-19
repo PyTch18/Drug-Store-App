@@ -144,7 +144,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                                     val userProfile: Any = if (selectedRole == RegisterScreen.PATIENT) {
                                         Patient(
                                             id = userId,
-                                            Name = name,
+                                            name = name,
                                             email = email,
                                             address = address,
                                             phoneNumber = phoneNumber,
