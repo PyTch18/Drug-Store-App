@@ -5,20 +5,12 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!--
-        WRITE_EXTERNAL_STORAGE is only needed for older devices.
-        maxSdkVersion="28" tells the system to only request this on Android 9 and below.
-    -->
+
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!--
-    ================================================================
-    FIX: Add requestLegacyExternalStorage and remove appComponentFactory
-    ================================================================
-    -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -42,15 +34,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- The position here is correct, at the end of the application block -->
-        <meta-data
-            android:name="com.here.sdk.access_key_id"
-            android:value="MldG0F9XjjAl8uqYUzR0jA"/>
-        <meta-data
-            android:name="com.here.sdk.access_key_secret"
-            android:value="m6QBHBWJ5aJsTjxyLQA20lnZiuP94NmRJfVbZxLBYWhsb1GdOEkqpAtbNFAWLx2Xh9zGg4anHwXC0pdXpgIoDw"/>
-
     </application>
 
 </manifest>

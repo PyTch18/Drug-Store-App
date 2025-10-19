@@ -20,7 +20,6 @@ import com.example.drugstore.register.RegisterScreen
 import com.example.drugstore.ui.theme.DrugStoreTheme
 import com.example.drugstore.ui.profile.ProfileScreen
 import com.example.drugstore.ui.map.MapScreen
-import com.here.sdk.mapview.MapView;
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -21,9 +21,8 @@ import com.example.drugstore.ui.theme.DrugStoreTheme
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel = viewModel(),
-    onLogout: () -> Unit // For navigating back to login after logout
+    onLogout: () -> Unit
 ) {
-    // Observe the userProfile LiveData as a state
     val userProfileState by profileViewModel.userProfile.observeAsState()
 
     Box(
@@ -93,19 +92,17 @@ private fun ProfileContent(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // User Name and Email
         InfoRow(icon = Icons.Default.Person, label = "Name", value = name)
         Divider(modifier = Modifier.padding(vertical = 16.dp))
         InfoRow(icon = Icons.Default.Email, label = "Email", value = email)
         Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-        // Role-specific details
         details.forEach { (label, value) ->
-            InfoRow(icon = Icons.Default.Home, label = label, value = value) // Using a generic icon
+            InfoRow(icon = Icons.Default.Home, label = label, value = value)
             Divider(modifier = Modifier.padding(vertical = 16.dp))
         }
 
-        Spacer(modifier = Modifier.weight(1f)) // Pushes the button to the bottom
+        Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = onLogout,
@@ -144,7 +141,6 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
 @Composable
 fun ProfileScreenPreview() {
     DrugStoreTheme {
-        // Preview with mock data
         ProfileContent(
             name = "Amr Azouz",
             email = "amr@example.com",
