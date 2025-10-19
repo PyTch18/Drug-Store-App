@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:118533765535:android:ec67e0d67574405c44a5aa",
+        "mobilesdk_app_id": "1:118533765535:android:9e91b25362aa1e0f44a5aa",
         "android_client_info": {
-          "package_name": "com.example.DrugStore"
+          "package_name": "com.example.drugstore"
         }
       },
       "oauth_client": [],

@@ -65,4 +65,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     kotlin
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-database")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
 }

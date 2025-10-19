@@ -11,12 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.drugstore.ui.theme.DrugStoreTheme
 
 @Composable
-fun LoginScreen(onLoginClick: () -> Unit) {
+fun LoginScreen(
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit // ADDED this parameter
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -35,7 +36,6 @@ fun LoginScreen(onLoginClick: () -> Unit) {
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -46,7 +46,6 @@ fun LoginScreen(onLoginClick: () -> Unit) {
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -58,13 +57,11 @@ fun LoginScreen(onLoginClick: () -> Unit) {
         ) {
             Text("Login", color = Color.White, modifier = Modifier.padding(8.dp))
         }
+
+        // ADDED the registration button
+        TextButton(onClick = onRegisterClick) {
+            Text("Don't have an account? Register")
+        }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    DrugStoreTheme {
-        LoginScreen(onLoginClick = {})
-    }
-}
