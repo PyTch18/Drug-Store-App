@@ -125,6 +125,15 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                label = { Text("Phone Number") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // Correct keyboard type
+                singleLine = true
+            )
         }
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -153,7 +162,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                                         Pharmacist(
                                             id = userId,
                                             name = name,
-                                            pharmacyName = "Default Pharmacy",
+                                            pharmacyName = pharmacyName,
                                             email = email,
                                             phoneNumber = phoneNumber,
 
