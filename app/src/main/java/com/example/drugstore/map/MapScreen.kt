@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,9 @@ import com.here.sdk.search.*
 import com.here.sdk.core.LanguageCode
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.ui.geometry.isEmpty
+import com.here.sdk.core.GeoBox
 import com.here.sdk.search.SearchEngine
 import com.here.sdk.search.SearchOptions
 import com.here.sdk.search.TextQuery
@@ -52,14 +56,17 @@ data class Pharmacy(
     val coordinates: GeoCoordinates
 )
 
+@SuppressLint("MissingPermission")
 @Composable
 fun MapScreen() {
     val context = LocalContext.current
     var hasLocationPermission by remember { mutableStateOf(false) }
 
+    var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Pharmacy>>(emptyList()) }
-    var selectedPharmacy by remember { mutableStateOf<Pharmacy?>(null) }
-    var isSearching by remember { mutableStateOf(false) } // To show a loading indicator
+    var isSearching by remember { mutableStateOf(false) }
+
+    var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -84,58 +91,122 @@ fun MapScreen() {
 
     Scaffold(
         topBar = {
-            MapSearchBar { query ->
-                Toast.makeText(context, "Searching for: $query", Toast.LENGTH_SHORT).show()
-            }
+            MapSearchBar(
+                query = searchQuery,
+                onQueryChanged = { newQuery -> searchQuery = newQuery },
+                onSearch = {
+                    if (searchQuery.isNotBlank()) {
+                        isSearching = true
+                        searchForPharmacies(context, searchQuery, mapViewInstance!!.camera.state.targetCoordinates) { places ->
+                            searchResults = places
+                            isSearching = false
+                            if (searchResults.isEmpty()) {
+                                Toast.makeText(context, "No pharmacies found for '$searchQuery'", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            )
         }
     ) { paddingValues ->
-        HereMap(modifier = Modifier.padding(paddingValues))
+        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            HereMap(
+                modifier = Modifier.fillMaxSize(),
+                pharmacies = searchResults,
+                // Pass the lambda to get the MapView instance once it's created.
+                onMapCreated = { mapView ->
+                    mapViewInstance = mapView
+                    // When the map is first ready, move to the user's current location.
+                    if (hasLocationPermission) {
+                        getCurrentLocation(context) { userLocation ->
+                            mapView.camera.lookAt(userLocation, MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 5000.0))
+                        }
+                    }
+                }
+            )
+            if (isSearching) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            if (hasLocationPermission) {
+                FloatingActionButton(
+                    onClick = {
+                        getCurrentLocation(context) { userLocation ->
+                            mapViewInstance!!.camera.lookAt(userLocation, MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 2000.0))
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.MyLocation, contentDescription = "My Location")
+                }
+            }
+        }
     }
 }
 
+
 @Composable
-fun HereMap(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+fun HereMap(
+    modifier: Modifier = Modifier,
+    pharmacies: List<Pharmacy>,
+    onMapCreated: (MapView) -> Unit // The new callback parameter.
+) {
+    val mapMarkers = remember { mutableListOf<MapMarker>() }
 
     AndroidView(
-        factory = {
-            initializeHereSdk(it)
-
-            val mapView = MapView(it)
-
-            val lifecycleObserver = LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_CREATE -> mapView.onCreate(null)
-                    Lifecycle.Event.ON_RESUME -> mapView.onResume()
-                    Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                    Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
-                    else -> {}
-                }
-            }
-            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
-
-            mapView.mapScene.loadScene(MapScheme.NORMAL_DAY) { mapError ->
-                if (mapError == null) {
-                    val defaultLocation = GeoCoordinates(30.0444, 31.2357) // Cairo
-                    val distanceInMeters = MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 10000.0)
-                    mapView.camera.lookAt(defaultLocation, distanceInMeters)
-                    addMapMarker(mapView, defaultLocation)
-                    Log.d("HereMap", "Map scene loaded successfully.")
-                } else {
-                    Log.e("HereMap", "Error loading map scene: $mapError")
-                }
-            }
-
+        factory = { context ->
+            initializeHereSdk(context)
+            val mapView = MapView(context)
+            mapView.onCreate(null)
+            onMapCreated(mapView) // Send the created instance back up to the parent.
             mapView
         },
-        onRelease = {
-            SDKNativeEngine.getSharedInstance()?.dispose()
-            Log.d("HereMap", "HERE SDK instance disposed on view release.")
+        update = { view ->
+            // --- FIX STARTS HERE ---
+
+            // 1. Remove the old markers that are currently on the map.
+            view.mapScene.removeMapMarkers(mapMarkers)
+
+            // 2. Clear your local list of marker references.
+            mapMarkers.clear()
+
+            // 3. Add the new markers for the updated pharmacy list.
+            pharmacies.forEach { pharmacy ->
+                addMapMarker(view, pharmacy.coordinates)?.let { marker ->
+                    mapMarkers.add(marker)
+                }
+            }
+
+            if (pharmacies.isNotEmpty()) {
+                if (pharmacies.size == 1) {
+                    view.camera.lookAt(pharmacies.first().coordinates, MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 2000.0))
+                } else {
+                    view.camera.lookAt(GeoBox.containing(pharmacies.map { it.coordinates }))
+                }
+            } else {
+                if (mapMarkers.isEmpty()) {
+                    val defaultLocation = GeoCoordinates(30.0444, 31.2357)
+                    val distance = MapMeasure(MapMeasure.Kind.DISTANCE_IN_METERS, 10000.0)
+                    view.camera.lookAt(defaultLocation, distance)
+                }
+            }
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
     )
+
+    // This lifecycle management is simplified and correct.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        onDispose {
+            // Clean up the SDK engine when the composable is removed.
+            SDKNativeEngine.getSharedInstance()?.dispose()
+            Log.d("HereMap", "HERE SDK instance disposed.")
+        }
+    }
 }
+
+private fun MapCamera.lookAt(p0: GeoBox?) {}
 
 
 private fun initializeHereSdk(context: Context) {
@@ -160,51 +231,50 @@ private fun initializeHereSdk(context: Context) {
     }
 }
 
-private fun addMapMarker(mapView: MapView, geoCoordinates: GeoCoordinates) {
+private fun addMapMarker(mapView: MapView, geoCoordinates: GeoCoordinates): MapMarker? {
     try {
         val mapImage = MapImageFactory.fromResource(mapView.context.resources, R.drawable.ic_launcher_foreground)
         val mapMarker = MapMarker(geoCoordinates, mapImage)
         mapView.mapScene.addMapMarker(mapMarker)
+        return mapMarker // Return the created marker
     } catch (e: Exception) {
         Log.e("HereMap", "Failed to add map marker: ${e.message}")
+        return null // Return null if creation fails
     }
 }
 
 @Composable
-fun MapSearchBar(onSearch: (String) -> Unit) {
-    var searchQuery by remember { mutableStateOf("") }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+fun MapSearchBar(
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    onSearch: () -> Unit // A simple lambda to trigger the search
+) {    Row(
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChanged, // Pass text changes up to the parent
+        label = { Text("Search for an area") },
+        modifier = Modifier.weight(1f),
+        singleLine = true,
+    )
+    IconButton(
+        onClick = onSearch, // The button now calls the onSearch lambda
+        modifier = Modifier.padding(start = 8.dp)
     ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            label = { Text("Search for an area") },
-            modifier = Modifier.weight(1f),
-            singleLine = true,
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = "Search"
         )
-
-        IconButton(
-            onClick = {
-                if (searchQuery.isNotBlank()) {
-                    onSearch(searchQuery)
-                }
-            },
-            modifier = Modifier.padding(start = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Search"
-            )
-        }
     }
 }
+}
 
-@SuppressLint("MissingPermission")
+
+@RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
 private fun getCurrentLocation(context: Context, onLocation: (GeoCoordinates) -> Unit) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
@@ -238,12 +308,8 @@ private fun searchForPharmacies(
             maxItems = 30
         }
 
-        // Fix: Implement both onSearchCompleted and onSearchExtendedCompleted
         searchEngine.search(textQuery, searchOptions, object : SearchCallbackExtended {
-            fun onSearchCompleted(searchError: SearchError?, places: List<Place>?) {
-                // This method is kept for backward compatibility but might not be called
-                // in newer versions if the extended one is present.
-                // It's good practice to handle the results here as a fallback.
+              fun onSearchCompleted(searchError: SearchError?, places: List<Place>?) {
                 if (searchError != null) {
                     Log.e("HereMap", "Search error: ${searchError.name}")
                     onResult(emptyList())
@@ -263,8 +329,7 @@ private fun searchForPharmacies(
                 onResult(pharmacies)
             }
 
-            // This is the newly required method you must implement.
-            fun onSearchExtendedCompleted(
+             fun onSearchExtendedCompleted(
                 searchError: SearchError?,
                 places: List<Place>?,
                 suggestedQuery: String?
