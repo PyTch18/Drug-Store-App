@@ -6,6 +6,6 @@ data class Item(
     val id: String,
     val name: String,
     val type: String,
-    val price: BigDecimal,
+    val price: Double,
     val imageUrl: String? = null
 )

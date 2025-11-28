@@ -14,12 +14,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.drugstore.ui.homeimport.HomeScreen
+import com.example.drugstore.ui.home.HomeScreen
 import com.example.drugstore.ui.login.LoginScreen
 import com.example.drugstore.register.RegisterScreen
 import com.example.drugstore.ui.theme.DrugStoreTheme
 import com.example.drugstore.ui.profile.ProfileScreen
 import com.example.drugstore.ui.map.MapScreen
+import com.example.drugstore.ui.patient.CartScreen
+import com.example.drugstore.ui.patient.PatientConsultationScreen
+import com.example.drugstore.ui.patient.PatientMedicationsScreen
+import com.example.drugstore.ui.pharmacist.PharmacistConsultationScreen
+import com.example.drugstore.ui.pharmacist.PharmacistMedicationsScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,27 +79,13 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 }
             )
         }
-
         composable("home") {
             HomeScreen(
-                onProfileClick = {
-                    Toast.makeText(context, "Profile Clicked!", Toast.LENGTH_SHORT).show()
-                },
-                onMapClick = {
-                    Toast.makeText(context, "Map Clicked!", Toast.LENGTH_SHORT).show()
-                }
-            )
-        }
-        composable("home") {
-            HomeScreen(
-                onProfileClick = {
-                    // Navigate to the "profile" route
-                    navController.navigate("profile")
-                },
-                onMapClick = {
-                    // Navigate to the "map" route
-                    navController.navigate("map")
-                }
+                onProfileClick = { navController.navigate("profile") },
+                onMapClick = { navController.navigate("map") },
+                onMedicationsClick = { navController.navigate("patientMeds") },
+                onCartClick = { navController.navigate("cart") },
+                onConsultClick = { navController.navigate("patientConsult") }
             )
         }
         composable("profile") {
@@ -112,5 +104,23 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         composable("map") {
             MapScreen()
         }
+
+        composable("patientMeds") {
+            PatientMedicationsScreen(
+                onCartClick = { navController.navigate("cart") }
+            )
+        }
+
+        composable("cart") {
+            CartScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("patientConsult") {
+            PatientConsultationScreen()
+        }
+        composable("pharmacistMeds") { PharmacistMedicationsScreen() }
+        composable("pharmacistConsult") { PharmacistConsultationScreen() }
+
+
     }
 }

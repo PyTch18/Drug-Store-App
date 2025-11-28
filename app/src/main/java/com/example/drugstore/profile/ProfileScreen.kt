@@ -35,6 +35,7 @@ fun ProfileScreen(
             is UserProfile.Loading -> {
                 CircularProgressIndicator()
             }
+
             is UserProfile.PatientProfile -> {
                 val patient = state.patient
                 ProfileContent(
@@ -42,8 +43,21 @@ fun ProfileScreen(
                     email = patient.email,
                     role = "Patient",
                     details = listOf(
-                        "Address" to (patient.address ?: "No address provided"),
-                        "Phone" to (patient.phoneNumber ?: "No phone provided")
+                        Triple(
+                            Icons.Default.Person,
+                            "Gender",
+                            patient.gender ?: "Not specified"
+                        ),
+                        Triple(
+                            Icons.Default.Home,
+                            "Address",
+                            patient.address ?: "No address provided"
+                        ),
+                        Triple(
+                            Icons.Default.Phone,
+                            "Phone",
+                            patient.phoneNumber ?: "No phone provided"
+                        )
                     ),
                     onLogout = {
                         profileViewModel.logout()
@@ -51,6 +65,7 @@ fun ProfileScreen(
                     }
                 )
             }
+
             is UserProfile.PharmacistProfile -> {
                 val pharmacist = state.pharmacist
                 ProfileContent(
@@ -58,8 +73,21 @@ fun ProfileScreen(
                     email = pharmacist.email,
                     role = "Pharmacist",
                     details = listOf(
-                        "Pharmacy Name" to (pharmacist.pharmacyName),
-                        "Phone" to (pharmacist.phoneNumber ?: "No phone provided")
+                        Triple(
+                            Icons.Default.Home,
+                            "Pharmacy Name",
+                            pharmacist.pharmacyName
+                        ),
+                        Triple(
+                            Icons.Default.Person,
+                            "Gender",
+                            pharmacist.gender ?: "Not specified"
+                        ),
+                        Triple(
+                            Icons.Default.Phone,
+                            "Phone",
+                            pharmacist.phoneNumber ?: "No phone provided"
+                        )
                     ),
                     onLogout = {
                         profileViewModel.logout()
@@ -67,6 +95,7 @@ fun ProfileScreen(
                     }
                 )
             }
+
             is UserProfile.Error, null -> {
                 Text("Failed to load profile. Please try again.")
             }
@@ -79,7 +108,7 @@ private fun ProfileContent(
     name: String,
     email: String,
     role: String,
-    details: List<Pair<String, String>>,
+    details: List<Triple<ImageVector, String, String>>,
     onLogout: () -> Unit
 ) {
     Column(
@@ -97,8 +126,8 @@ private fun ProfileContent(
         InfoRow(icon = Icons.Default.Email, label = "Email", value = email)
         Divider(modifier = Modifier.padding(vertical = 16.dp))
 
-        details.forEach { (label, value) ->
-            InfoRow(icon = Icons.Default.Home, label = label, value = value)
+        details.forEach { (icon, label, value) ->
+            InfoRow(icon = icon, label = label, value = value)
             Divider(modifier = Modifier.padding(vertical = 16.dp))
         }
 
@@ -115,7 +144,6 @@ private fun ProfileContent(
         }
     }
 }
-
 
 @Composable
 private fun InfoRow(icon: ImageVector, label: String, value: String) {
@@ -145,7 +173,11 @@ fun ProfileScreenPreview() {
             name = "Amr Azouz",
             email = "amr@example.com",
             role = "Patient",
-            details = listOf("Address" to "123 Main St", "Phone" to "555-1234"),
+            details = listOf(
+                Triple(Icons.Default.Person, "Gender", "Male"),
+                Triple(Icons.Default.Home, "Address", "123 Main St"),
+                Triple(Icons.Default.Phone, "Phone", "555-1234")
+            ),
             onLogout = {}
         )
     }
