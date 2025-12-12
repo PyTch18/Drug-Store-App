@@ -18,7 +18,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.drugstore.data.model.Medication
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PharmacistMedicationsScreen(
@@ -26,7 +25,6 @@ fun PharmacistMedicationsScreen(
 ) {
     var editingMedication by remember { mutableStateOf<Medication?>(null) }
 
-    // Load medications when the screen is first displayed
     LaunchedEffect(Unit) {
         viewModel.loadMedications()
     }
@@ -127,7 +125,7 @@ private fun MedicationEditDialog(
                         name = name,
                         price = price,
                         quantity = quantity,
-                        imageUrl = imageUrl.ifBlank { null } // store null if empty
+                        imageUrl = imageUrl.ifBlank { null }
                     )
                 )
 

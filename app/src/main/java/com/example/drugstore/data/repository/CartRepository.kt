@@ -22,29 +22,38 @@ class CartRepository(
         })
     }
 
-    fun addToCart(patientId: String, medication: Medication, onComplete: (Boolean) -> Unit) {
-        val ref = database.getReference("carts").child(patientId).child(medication.id)
+    fun addToCart(
+        patientId: String,
+        medication: Medication,
+        onComplete: (success: Boolean, message: String) -> Unit
+    ) {
+        val pharmacyId = medication.pharmacyId
+        val medId = medication.id
 
-        ref.runTransaction(object : Transaction.Handler {
+        if (pharmacyId.isNullOrEmpty() || medId.isEmpty()) {
+            onComplete(false, "Invalid medication data.")
+            return
+        }
+
+        val medRef = database
+            .getReference("pharmacies")
+            .child(pharmacyId)
+            .child("medications")
+            .child(medId)
+
+        // 1) Transaction only on the medication node to safely decrement stock
+        medRef.runTransaction(object : Transaction.Handler {
             override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val item = currentData.getValue(CartItem::class.java)
-                if (item == null) {
-                    // If the item doesn't exist, create it with quantity 1
-                    val newItem = CartItem(
-                        id = medication.id,
-                        medicationId = medication.id,
-                        name = medication.name,
-                        price = medication.price,
-                        quantity = 1,
-                        imageUrl = medication.imageUrl,
-                        pharmacyId = medication.pharmacyId
-                    )
-                    currentData.value = newItem
-                } else {
-                    // If it exists, just increment the quantity
-                    item.quantity += 1
-                    currentData.value = item
+                val med = currentData.getValue(Medication::class.java)
+                    ?: return Transaction.abort()
+
+                // If quantity <= 0, treat as out of stock
+                if (med.quantity <= 0) {
+                    return Transaction.abort()
                 }
+
+                // Decrement quantity by 1
+                currentData.child("quantity").value = med.quantity - 1
                 return Transaction.success(currentData)
             }
 
@@ -53,7 +62,59 @@ class CartRepository(
                 committed: Boolean,
                 currentData: DataSnapshot?
             ) {
-                onComplete(error == null && committed)
+                if (error != null) {
+                    onComplete(false, "Network or permission error.")
+                    return
+                }
+                if (!committed) {
+                    onComplete(false, "Item is out of stock.")
+                    return
+                }
+
+                // 2) Stock successfully decremented, now update the cart
+                val cartItemRef = database
+                    .getReference("carts")
+                    .child(patientId)
+                    .child(medId)
+
+                cartItemRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val existing = snapshot.getValue(CartItem::class.java)
+                        if (existing == null) {
+                            val newItem = CartItem(
+                                id = medId,
+                                medicationId = medId,
+                                name = medication.name,
+                                price = medication.price,
+                                quantity = 1,
+                                imageUrl = medication.imageUrl,
+                                pharmacyId = pharmacyId
+                            )
+                            cartItemRef.setValue(newItem)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        onComplete(true, "Item added to cart.")
+                                    } else {
+                                        onComplete(false, "Failed to update cart.")
+                                    }
+                                }
+                        } else {
+                            val newQty = existing.quantity + 1
+                            cartItemRef.child("quantity").setValue(newQty)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        onComplete(true, "Item added to cart.")
+                                    } else {
+                                        onComplete(false, "Failed to update cart.")
+                                    }
+                                }
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        onComplete(false, "Failed to update cart.")
+                    }
+                })
             }
         })
     }
@@ -64,7 +125,41 @@ class CartRepository(
     }
 
     fun clearCart(patientId: String, onComplete: (Boolean) -> Unit) {
-        val ref = database.getReference("carts").child(patientId)
-        ref.removeValue().addOnCompleteListener { onComplete(it.isSuccessful) }
+        database.getReference("carts").child(patientId).removeValue()
+            .addOnCompleteListener { onComplete(it.isSuccessful) }
+    }
+
+    fun checkout(patientId: String, onComplete: (Boolean) -> Unit) {
+        val cartRef = database.getReference("carts").child(patientId)
+        cartRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val items = snapshot.children.mapNotNull { it.getValue(CartItem::class.java) }
+                if (items.isEmpty()) {
+                    onComplete(false)
+                    return
+                }
+
+                val updates = mutableMapOf<String, Any?>()
+                items.forEach { item ->
+                    val quantityPath =
+                        "/pharmacies/${item.pharmacyId}/medications/${item.medicationId}/quantity"
+                    // Use ServerValue.increment to safely decrement total stock on checkout
+                    updates[quantityPath] = ServerValue.increment(-item.quantity.toLong())
+                }
+
+                database.getReference().updateChildren(updates)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            clearCart(patientId, onComplete)
+                        } else {
+                            onComplete(false)
+                        }
+                    }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                onComplete(false)
+            }
+        })
     }
 }

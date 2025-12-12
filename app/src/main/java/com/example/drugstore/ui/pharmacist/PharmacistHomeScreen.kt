@@ -2,10 +2,7 @@ package com.example.drugstore.ui.pharmacist
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.LocalPharmacy
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,7 +16,8 @@ fun PharmacistHomeScreen(
     onConsultationClick: () -> Unit,
     onMapClick: () -> Unit,
     onVoipCallCenterClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onLogoutClick: () -> Unit // Added callback
 ) {
     Column(
         modifier = Modifier
@@ -31,70 +29,44 @@ fun PharmacistHomeScreen(
         Text("Pharmacist Home", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(32.dp))
 
-        Button(
-            onClick = onProfileClick, // Added this button
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("My Profile", color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
-        }
-
+        // Profile Button
+        HomeButton(icon = Icons.Default.Person, text = "My Profile", onClick = onProfileClick)
         Spacer(Modifier.height(16.dp))
 
-        Button(
-            onClick = onMedicationsClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Icon(Icons.Default.LocalPharmacy, contentDescription = "Medications", tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("My Medications", color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
-        }
-
+        // Medications Button
+        HomeButton(icon = Icons.Default.LocalPharmacy, text = "My Medications", onClick = onMedicationsClick)
         Spacer(Modifier.height(16.dp))
 
-        Button(
-            onClick = onConsultationClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Icon(Icons.Default.Call, contentDescription = "Consultation", tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Consultation Status",
-                color = Color.White,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
+        // Consultation Button
+        HomeButton(icon = Icons.Default.Call, text = "Consultation Status", onClick = onConsultationClick)
         Spacer(Modifier.height(16.dp))
 
-        Button(
-            onClick = onMapClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Icon(Icons.Default.LocationOn, contentDescription = "Map", tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Pharmacy Location / Map",
-                color = Color.White,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
+        // Map Button
+        HomeButton(icon = Icons.Default.LocationOn, text = "Pharmacy Location / Map", onClick = onMapClick)
         Spacer(Modifier.height(16.dp))
 
-        Button(
-            onClick = onVoipCallCenterClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Icon(Icons.Default.Call, contentDescription = "VoIP", tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("VoIP Call Center", color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
-        }
+        // VoIP Button
+        HomeButton(icon = Icons.Default.PhoneInTalk, text = "VoIP Call Center", onClick = onVoipCallCenterClick)
+        Spacer(Modifier.height(16.dp))
+        
+        // Logout Button
+        HomeButton(icon = Icons.Default.Logout, text = "Logout", onClick = onLogoutClick)
+    }
+}
+
+@Composable
+private fun HomeButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+    ) {
+        Icon(icon, contentDescription = text, tint = Color.White)
+        Spacer(Modifier.width(8.dp))
+        Text(text, color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
     }
 }

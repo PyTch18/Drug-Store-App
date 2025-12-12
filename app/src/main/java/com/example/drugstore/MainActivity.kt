@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -29,11 +30,11 @@ import com.example.drugstore.ui.pharmacist.PharmacistMedicationsScreen
 import com.example.drugstore.ui.pharmacist.PharmacistProfileScreen
 import com.example.drugstore.ui.profile.ProfileScreen
 import com.example.drugstore.ui.theme.DrugStoreTheme
+import com.google.firebase.auth.FirebaseAuth
 import org.linphone.core.Call
 
 class MainActivity : ComponentActivity() {
 
-    // Get the shared VoipManager from the application
     private val voipManager: VoipManager by lazy {
         (application as DrugStoreApp).voipManager
     }
@@ -104,13 +105,21 @@ fun AppNavigation(
             )
         }
 
+        val onLogout = {
+            FirebaseAuth.getInstance().signOut()
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            }
+        }
+
         composable("home") {
             HomeScreen(
                 onProfileClick = { navController.navigate("profile") },
                 onMapClick = { navController.navigate("map") },
                 onMedicationsClick = { navController.navigate("patientMeds") },
                 onCartClick = { navController.navigate("cart") },
-                onConsultClick = { navController.navigate("patientConsult") }
+                onConsultClick = { navController.navigate("patientConsult") },
+                onLogoutClick = onLogout
             )
         }
 
@@ -120,7 +129,8 @@ fun AppNavigation(
                 onConsultationClick = { navController.navigate("pharmacistConsult") },
                 onMapClick = { navController.navigate("map") },
                 onVoipCallCenterClick = { navController.navigate("pharmacistConsult") },
-                onProfileClick = { navController.navigate("pharmacistProfile") }
+                onProfileClick = { navController.navigate("pharmacistProfile") },
+                onLogoutClick = onLogout
             )
         }
 
@@ -132,13 +142,7 @@ fun AppNavigation(
 
         composable("profile") {
             ProfileScreen(
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
-                    }
-                }
+                onLogout = onLogout
             )
         }
 
