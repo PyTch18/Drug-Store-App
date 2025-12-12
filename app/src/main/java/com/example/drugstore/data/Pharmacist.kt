@@ -14,6 +14,6 @@ data class Pharmacist(
     @JvmField
     val isOnline: Boolean = false,
     
-    val voipExtension: String? = null,
-    val voipPassword: String? = null
+    val voipExtension: String? = "1001",
+    val voipPassword: String? = "2018"
 )

@@ -8,6 +8,6 @@ data class Patient(
     val phoneNumber: String? = null,
     val gender: String? = null,
     val userType: String = "PATIENT",
-    val voipExtension: String? = null,
-    val voipPassword: String? = null
+    val voipExtension: String? = "1001",
+    val voipPassword: String? = "2018"
 )

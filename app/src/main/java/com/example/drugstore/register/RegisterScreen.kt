@@ -176,8 +176,8 @@ fun RegisterScreen(onRegistrationSuccess: (isPharmacist: Boolean) -> Unit) {
                                 val userId = task.result?.user?.uid
                                 if (userId != null) {
                                     // Generate unique VoIP credentials
-                                    val voipExtension = (1000..9999).random().toString()
-                                    val voipPassword = (100000..999999).random().toString()
+                                    val voipExtension = (1001).toString()
+                                    val voipPassword = (2018).toString()
 
                                     val userProfile: Any =
                                         if (selectedRole == UserRole.PATIENT) {
@@ -202,7 +202,7 @@ fun RegisterScreen(onRegistrationSuccess: (isPharmacist: Boolean) -> Unit) {
                                                 gender = gender,
                                                 userType = "PHARMACIST",
                                                 isOnline = false,
-                                                voipExtension = voipExtension,
+                                                voipExtension = (2001).toString(),
                                                 voipPassword = voipPassword
                                             )
                                         }

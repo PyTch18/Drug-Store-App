@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,14 +33,14 @@ import org.linphone.core.Call
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var voipManager: VoipManager
-    private val mainViewModel: MainViewModel by viewModels()
+    // Get the shared VoipManager from the application
+    private val voipManager: VoipManager by lazy {
+        (application as DrugStoreApp).voipManager
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        voipManager = VoipManager(application)
 
         setContent {
             DrugStoreTheme {
@@ -51,8 +50,7 @@ class MainActivity : ComponentActivity() {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         AppNavigation(
                             modifier = Modifier.padding(innerPadding),
-                            voipManager = voipManager,
-                            mainViewModel = mainViewModel
+                            voipManager = voipManager
                         )
                     }
 
@@ -76,8 +74,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
-    voipManager: VoipManager,
-    mainViewModel: MainViewModel
+    voipManager: VoipManager
 ) {
     val navController = rememberNavController()
 
@@ -89,16 +86,6 @@ fun AppNavigation(
         composable("login") {
             LoginScreen(
                 onLoginSuccess = { isPharmacist ->
-                    mainViewModel.fetchUserCredentials(isPharmacist) { ext, pass, name ->
-                        if (ext != null && pass != null) {
-                            voipManager.configureAccount(
-                                ext = ext,
-                                password = pass,
-                                domain = "192.168.56.1",
-                                displayName = name
-                            )
-                        }
-                    }
                     navController.navigate(if (isPharmacist) "pharmacistHome" else "home") {
                         popUpTo("login") { inclusive = true }
                     }

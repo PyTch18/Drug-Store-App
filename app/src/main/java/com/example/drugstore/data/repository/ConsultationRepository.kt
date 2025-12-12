@@ -1,7 +1,7 @@
 package com.example.drugstore.data.repository
 
-import com.google.firebase.database.*
 import com.example.drugstore.data.model.Pharmacist
+import com.google.firebase.database.*
 
 class ConsultationRepository(
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()

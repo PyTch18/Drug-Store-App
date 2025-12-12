@@ -12,6 +12,7 @@ import com.example.drugstore.data.model.Pharmacist
 import com.example.drugstore.data.repository.ConsultationRepository
 import com.example.drugstore.data.voip.VoipManager
 
+val PBX_DOMAIN = "172.20.10.50"
 class PatientConsultationViewModel(
     private val repo: ConsultationRepository = ConsultationRepository()
 ) : androidx.lifecycle.ViewModel() {
@@ -59,8 +60,8 @@ fun PatientConsultationScreen(
                                 Button(
                                     onClick = {
                                         pharm.voipExtension?.let { ext ->
-                                            val sipAddress = "sip:$ext@192.168.56.1"
-                                            voipManager?.startCall(sipAddress)
+                                            voipManager?.startCall("sip:2001@$PBX_DOMAIN")  // 2001 = pharmacist ext
+
                                         }
                                     },
                                     enabled = pharm.voipExtension != null && voipManager != null
