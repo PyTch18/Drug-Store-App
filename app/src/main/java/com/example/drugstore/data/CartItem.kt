@@ -5,7 +5,7 @@ data class CartItem(
     val medicationId: String = "",
     val name: String = "",
     val price: Double = 0.0,   // <- must exist
-    val quantity: Int = 1,
+    var quantity: Int = 1,
     val imageUrl: String? = null,
     val pharmacyId: String? = null
 )

@@ -1,5 +1,9 @@
 package com.example.drugstore.ui.patient
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.drugstore.data.model.Medication
@@ -16,19 +20,16 @@ class PatientMedicationsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
-    var medications: List<Medication> = emptyList()
+    val medications = mutableStateListOf<Medication>()
+    var isLoading by mutableStateOf(true)
         private set
 
-    var isLoading: Boolean = true
-        private set
-
-    fun loadMedications(onStateChanged: () -> Unit) {
+    fun loadMedications() {
         isLoading = true
-        onStateChanged()
-        medsRepo.getAllMedications { list ->
-            medications = list
+        medsRepo.getAllMedicationsForPatients { list ->
+            medications.clear()
+            medications.addAll(list)
             isLoading = false
-            onStateChanged()
         }
     }
 

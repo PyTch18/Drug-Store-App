@@ -1,5 +1,7 @@
 package com.example.drugstore.data.model
 
+import com.google.firebase.database.PropertyName
+
 data class Pharmacist(
     val id: String = "",
     val name: String = "",
@@ -8,5 +10,10 @@ data class Pharmacist(
     val phoneNumber: String? = null,
     val gender: String? = null,
     val userType: String = "PHARMACIST",
-    val isOnline: Boolean = false        // for consultation availability
+
+    @JvmField
+    val isOnline: Boolean = false,
+    
+    val voipExtension: String? = null,
+    val voipPassword: String? = null
 )

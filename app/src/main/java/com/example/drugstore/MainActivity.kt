@@ -1,40 +1,72 @@
-package com.example.drugstore // Add the package declaration
+package com.example.drugstore
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.drugstore.data.voip.VoipManager
+import com.example.drugstore.register.RegisterScreen
+import com.example.drugstore.ui.calling.CallingScreen
+import com.example.drugstore.ui.calling.IncomingCallScreen
 import com.example.drugstore.ui.home.HomeScreen
 import com.example.drugstore.ui.login.LoginScreen
-import com.example.drugstore.register.RegisterScreen
-import com.example.drugstore.ui.theme.DrugStoreTheme
-import com.example.drugstore.ui.profile.ProfileScreen
 import com.example.drugstore.ui.map.MapScreen
 import com.example.drugstore.ui.patient.CartScreen
 import com.example.drugstore.ui.patient.PatientConsultationScreen
 import com.example.drugstore.ui.patient.PatientMedicationsScreen
 import com.example.drugstore.ui.pharmacist.PharmacistConsultationScreen
+import com.example.drugstore.ui.pharmacist.PharmacistHomeScreen
 import com.example.drugstore.ui.pharmacist.PharmacistMedicationsScreen
+import com.example.drugstore.ui.pharmacist.PharmacistProfileScreen
+import com.example.drugstore.ui.profile.ProfileScreen
+import com.example.drugstore.ui.theme.DrugStoreTheme
+import org.linphone.core.Call
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var voipManager: VoipManager
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        voipManager = VoipManager(application)
+
         setContent {
             DrugStoreTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Pass the padding to the navigation host
-                    AppNavigation(modifier = Modifier.padding(innerPadding))
+                val callState = voipManager.callState
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        AppNavigation(
+                            modifier = Modifier.padding(innerPadding),
+                            voipManager = voipManager,
+                            mainViewModel = mainViewModel
+                        )
+                    }
+
+                    if (callState != null) {
+                        when (callState) {
+                            Call.State.IncomingReceived -> {
+                                IncomingCallScreen(voipManager = voipManager)
+                            }
+                            Call.State.Connected, Call.State.OutgoingProgress -> {
+                                CallingScreen(voipManager = voipManager)
+                            }
+                            else -> { /* No UI for other states */ }
+                        }
+                    }
                 }
             }
         }
@@ -42,9 +74,12 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation(modifier: Modifier = Modifier) {
+fun AppNavigation(
+    modifier: Modifier = Modifier,
+    voipManager: VoipManager,
+    mainViewModel: MainViewModel
+) {
     val navController = rememberNavController()
-    val context = LocalContext.current
 
     NavHost(
         navController = navController,
@@ -52,33 +87,36 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         composable("login") {
-            // FIXED: Pass both required parameters to LoginScreen
             LoginScreen(
-                onLoginClick = {
-                    // Actual login logic would go here
-                    navController.navigate("home") {
+                onLoginSuccess = { isPharmacist ->
+                    mainViewModel.fetchUserCredentials(isPharmacist) { ext, pass, name ->
+                        if (ext != null && pass != null) {
+                            voipManager.configureAccount(
+                                ext = ext,
+                                password = pass,
+                                domain = "192.168.56.1",
+                                displayName = name
+                            )
+                        }
+                    }
+                    navController.navigate(if (isPharmacist) "pharmacistHome" else "home") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
-                onRegisterClick = {
-                    // Navigate to the new register screen
-                    navController.navigate("register")
+                onRegisterClick = { navController.navigate("register") }
+            )
+        }
+
+        composable("register") {
+            RegisterScreen(
+                onRegistrationSuccess = { isPharmacist ->
+                    navController.navigate(if (isPharmacist) "pharmacistHome" else "home") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             )
         }
 
-        // ADDED: The missing destination for the registration screen
-        composable("register") {
-            RegisterScreen(
-                onRegistrationSuccess = {
-                    // After successful registration, go to the home screen
-                    navController.navigate("home") {
-                        // Clear the back stack so the user can't go back
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            )
-        }
         composable("home") {
             HomeScreen(
                 onProfileClick = { navController.navigate("profile") },
@@ -88,10 +126,26 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 onConsultClick = { navController.navigate("patientConsult") }
             )
         }
+
+        composable("pharmacistHome") {
+            PharmacistHomeScreen(
+                onMedicationsClick = { navController.navigate("pharmacistMeds") },
+                onConsultationClick = { navController.navigate("pharmacistConsult") },
+                onMapClick = { navController.navigate("map") },
+                onVoipCallCenterClick = { navController.navigate("pharmacistConsult") },
+                onProfileClick = { navController.navigate("pharmacistProfile") }
+            )
+        }
+
+        composable("pharmacistProfile") {
+            PharmacistProfileScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("profile") {
             ProfileScreen(
                 onLogout = {
-                    // Navigate back to login and clear the entire back stack
                     navController.navigate("login") {
                         popUpTo(navController.graph.startDestinationId) {
                             inclusive = true
@@ -101,14 +155,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             )
         }
 
-        composable("map") {
-            MapScreen()
-        }
+        composable("map") { MapScreen() }
 
         composable("patientMeds") {
-            PatientMedicationsScreen(
-                onCartClick = { navController.navigate("cart") }
-            )
+            PatientMedicationsScreen(onCartClick = { navController.navigate("cart") })
         }
 
         composable("cart") {
@@ -116,11 +166,15 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         }
 
         composable("patientConsult") {
-            PatientConsultationScreen()
+            PatientConsultationScreen(voipManager = voipManager)
         }
-        composable("pharmacistMeds") { PharmacistMedicationsScreen() }
-        composable("pharmacistConsult") { PharmacistConsultationScreen() }
 
+        composable("pharmacistMeds") {
+            PharmacistMedicationsScreen()
+        }
 
+        composable("pharmacistConsult") {
+            PharmacistConsultationScreen(voipManager = voipManager)
+        }
     }
 }

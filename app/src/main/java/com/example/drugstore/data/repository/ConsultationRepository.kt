@@ -1,7 +1,7 @@
 package com.example.drugstore.data.repository
 
-import com.example.drugstore.data.model.Pharmacist
 import com.google.firebase.database.*
+import com.example.drugstore.data.model.Pharmacist
 
 class ConsultationRepository(
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
@@ -10,6 +10,19 @@ class ConsultationRepository(
     fun setPharmacistOnline(pharmacistId: String, online: Boolean) {
         database.getReference("pharmacists").child(pharmacistId)
             .child("isOnline").setValue(online)
+    }
+
+    fun getPharmacistOnlineStatus(pharmacistId: String, onResult: (Boolean) -> Unit) {
+        database.getReference("pharmacists").child(pharmacistId).child("isOnline")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    onResult(snapshot.getValue(Boolean::class.java) ?: false)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onResult(false)
+                }
+            })
     }
 
     fun getOnlinePharmacists(onResult: (List<Pharmacist>) -> Unit) {

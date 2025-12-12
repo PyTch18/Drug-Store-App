@@ -18,13 +18,14 @@ import com.example.drugstore.data.model.Pharmacist
 import com.example.drugstore.ui.theme.DrugStoreTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.random.Random
 
-enum class RegisterScreen {
+enum class UserRole {
     PATIENT, PHARMACIST
 }
 
 @Composable
-fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
+fun RegisterScreen(onRegistrationSuccess: (isPharmacist: Boolean) -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -33,7 +34,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
     var pharmacyName by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("Male") }
 
-    var selectedRole by remember { mutableStateOf(RegisterScreen.PATIENT) }
+    var selectedRole by remember { mutableStateOf(UserRole.PATIENT) }
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -48,7 +49,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
         Text("Register", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Row 1: role selection
+        // Role selection
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -56,25 +57,22 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
         ) {
             Text("I am a:")
             Spacer(modifier = Modifier.width(16.dp))
-
             RadioButton(
-                selected = selectedRole == RegisterScreen.PATIENT,
-                onClick = { selectedRole = RegisterScreen.PATIENT }
+                selected = selectedRole == UserRole.PATIENT,
+                onClick = { selectedRole = UserRole.PATIENT }
             )
             Text("Patient")
-
             Spacer(modifier = Modifier.width(16.dp))
-
             RadioButton(
-                selected = selectedRole == RegisterScreen.PHARMACIST,
-                onClick = { selectedRole = RegisterScreen.PHARMACIST }
+                selected = selectedRole == UserRole.PHARMACIST,
+                onClick = { selectedRole = UserRole.PHARMACIST }
             )
             Text("Pharmacist")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Row 2: gender selection
+        // Gender selection
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -82,15 +80,12 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
         ) {
             Text("Gender:")
             Spacer(modifier = Modifier.width(16.dp))
-
             RadioButton(
                 selected = gender == "Male",
                 onClick = { gender = "Male" }
             )
             Text("Male")
-
             Spacer(modifier = Modifier.width(16.dp))
-
             RadioButton(
                 selected = gender == "Female",
                 onClick = { gender = "Female" }
@@ -130,7 +125,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (selectedRole == RegisterScreen.PATIENT) {
+        if (selectedRole == UserRole.PATIENT) {
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
@@ -139,7 +134,6 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
@@ -157,7 +151,6 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
@@ -182,8 +175,12 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                             if (task.isSuccessful) {
                                 val userId = task.result?.user?.uid
                                 if (userId != null) {
+                                    // Generate unique VoIP credentials
+                                    val voipExtension = (1000..9999).random().toString()
+                                    val voipPassword = (100000..999999).random().toString()
+
                                     val userProfile: Any =
-                                        if (selectedRole == RegisterScreen.PATIENT) {
+                                        if (selectedRole == UserRole.PATIENT) {
                                             Patient(
                                                 id = userId,
                                                 name = name,
@@ -191,7 +188,9 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                                                 address = address,
                                                 phoneNumber = phoneNumber,
                                                 gender = gender,
-                                                userType = "PATIENT"
+                                                userType = "PATIENT",
+                                                voipExtension = voipExtension,
+                                                voipPassword = voipPassword
                                             )
                                         } else {
                                             Pharmacist(
@@ -202,12 +201,14 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                                                 phoneNumber = phoneNumber,
                                                 gender = gender,
                                                 userType = "PHARMACIST",
-                                                isOnline = false
+                                                isOnline = false,
+                                                voipExtension = voipExtension,
+                                                voipPassword = voipPassword
                                             )
                                         }
 
                                     val dbPath =
-                                        if (selectedRole == RegisterScreen.PATIENT)
+                                        if (selectedRole == UserRole.PATIENT)
                                             "patients" else "pharmacists"
 
                                     database.getReference(dbPath).child(userId)
@@ -219,7 +220,7 @@ fun RegisterScreen(onRegistrationSuccess: () -> Unit) {
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                             isLoading = false
-                                            onRegistrationSuccess()
+                                            onRegistrationSuccess(selectedRole == UserRole.PHARMACIST)
                                         }
                                         .addOnFailureListener { e ->
                                             Toast.makeText(

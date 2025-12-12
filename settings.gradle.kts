@@ -16,11 +16,19 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Mapbox repo (required for 7.9.0)
         maven {
-            url = uri("https://repo.heremaps.com/repository/here-sdk/")
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
             credentials {
-                username = "MldG0F9XjjAl8uqYUzR0jA"
-                password = "m6QBHBWJ5aJsTjxyLQA20lnZiuP94NmRJfVbZxLBYWhsb1GdOEkqpAtbNFAWLx2Xh9zGg4anHwXC0pdXpgIoDw"
+                username = "amr18"
+                password = "C/.-@QDn8H4nyqB"
+            }
+        }
+        maven {
+            name = "linphone.org maven repository"
+            url = uri("https://download.linphone.org/maven_repository")
+            content {
+                includeGroup("org.linphone")
             }
         }
     }

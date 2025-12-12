@@ -1,17 +1,22 @@
 package com.example.drugstore.ui.patient
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.drugstore.data.model.Medication
-import androidx.compose.material3.ExperimentalMaterial3Api
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,10 +24,8 @@ fun PatientMedicationsScreen(
     viewModel: PatientMedicationsViewModel = viewModel(),
     onCartClick: () -> Unit
 ) {
-    var uiVersion by remember { mutableStateOf(0) }
-
     LaunchedEffect(Unit) {
-        viewModel.loadMedications { uiVersion++ }
+        viewModel.loadMedications()
     }
 
     Scaffold(
@@ -37,10 +40,8 @@ fun PatientMedicationsScreen(
     ) { padding ->
         if (viewModel.isLoading) {
             Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
@@ -59,15 +60,13 @@ fun PatientMedicationsScreen(
 @Composable
 private fun MedicationList(
     modifier: Modifier = Modifier,
-    medications: List<Medication>,
-    onAddToCart: (Medication) -> Unit
+    medications: List<com.example.drugstore.data.model.Medication>,
+    onAddToCart: (com.example.drugstore.data.model.Medication) -> Unit
 ) {
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    ) { 
         items(medications) { med ->
             Card(
                 modifier = Modifier.fillMaxWidth(),

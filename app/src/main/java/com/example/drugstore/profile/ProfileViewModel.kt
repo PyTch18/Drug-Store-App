@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.drugstore.data.model.Patient
-import com.example.drugstore.data.model.Pharmacist
+import com.example.drugstore.data.model.Pharmacist // Corrected import
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -21,7 +21,6 @@ class ProfileViewModel : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
 
-    // LiveData to hold the user profile state
     private val _userProfile = MutableLiveData<UserProfile>(UserProfile.Loading)
     val userProfile: LiveData<UserProfile> = _userProfile
 
@@ -36,7 +35,6 @@ class ProfileViewModel : ViewModel() {
             return
         }
 
-        // First, check if the user is a patient
         val patientRef = database.getReference("patients").child(userId)
         patientRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -48,7 +46,6 @@ class ProfileViewModel : ViewModel() {
                     }
                 }
 
-                // If not found as a patient, check if they are a pharmacist
                 val pharmacistRef = database.getReference("pharmacists").child(userId)
                 pharmacistRef.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(pharmacistSnapshot: DataSnapshot) {
@@ -60,7 +57,7 @@ class ProfileViewModel : ViewModel() {
                                 _userProfile.value = UserProfile.Error
                             }
                         } else {
-                            _userProfile.value = UserProfile.Error // User not found in either role
+                            _userProfile.value = UserProfile.Error
                         }
                     }
 

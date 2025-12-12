@@ -6,6 +6,8 @@ data class Patient(
     val email: String = "",
     val address: String? = null,
     val phoneNumber: String? = null,
-    val gender: String? = null,          // "Male", "Female", etc.
-    val userType: String = "PATIENT"     // used in profile / navigation
+    val gender: String? = null,
+    val userType: String = "PATIENT",
+    val voipExtension: String? = null,
+    val voipPassword: String? = null
 )

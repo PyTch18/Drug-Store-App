@@ -23,18 +23,39 @@ class CartRepository(
     }
 
     fun addToCart(patientId: String, medication: Medication, onComplete: (Boolean) -> Unit) {
-        val ref = database.getReference("carts").child(patientId)
-        val key = ref.push().key ?: return onComplete(false)
-        val item = CartItem(
-            id = key,
-            medicationId = medication.id,
-            name = medication.name,
-            price = medication.price.toDouble(),
-            quantity = 1,
-            imageUrl = medication.imageUrl,
-            pharmacyId = medication.pharmacyId
-        )
-        ref.child(key).setValue(item).addOnCompleteListener { onComplete(it.isSuccessful) }
+        val ref = database.getReference("carts").child(patientId).child(medication.id)
+
+        ref.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(currentData: MutableData): Transaction.Result {
+                val item = currentData.getValue(CartItem::class.java)
+                if (item == null) {
+                    // If the item doesn't exist, create it with quantity 1
+                    val newItem = CartItem(
+                        id = medication.id,
+                        medicationId = medication.id,
+                        name = medication.name,
+                        price = medication.price,
+                        quantity = 1,
+                        imageUrl = medication.imageUrl,
+                        pharmacyId = medication.pharmacyId
+                    )
+                    currentData.value = newItem
+                } else {
+                    // If it exists, just increment the quantity
+                    item.quantity += 1
+                    currentData.value = item
+                }
+                return Transaction.success(currentData)
+            }
+
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                currentData: DataSnapshot?
+            ) {
+                onComplete(error == null && committed)
+            }
+        })
     }
 
     fun removeItem(patientId: String, cartItemId: String, onComplete: (Boolean) -> Unit) {

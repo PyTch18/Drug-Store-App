@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.drugstore.data.model.Pharmacist // Corrected import
 import com.example.drugstore.ui.theme.DrugStoreTheme
 
 @Composable

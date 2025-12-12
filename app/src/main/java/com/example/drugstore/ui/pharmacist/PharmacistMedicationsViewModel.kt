@@ -1,5 +1,6 @@
 package com.example.drugstore.ui.pharmacist
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.drugstore.data.model.Medication
 import com.example.drugstore.data.repository.MedicationRepository
@@ -10,14 +11,14 @@ class PharmacistMedicationsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
-    var medications: List<Medication> = emptyList()
-        private set
+    // Use a Compose-observable list
+    val medications = mutableStateListOf<Medication>()
 
-    fun loadMedications(onStateChanged: () -> Unit) {
+    fun loadMedications() {
         val uid = auth.currentUser?.uid ?: return
         medsRepo.getMedicationsForPharmacist(uid) { list ->
-            medications = list
-            onStateChanged()
+            medications.clear()
+            medications.addAll(list)
         }
     }
 
@@ -27,14 +28,16 @@ class PharmacistMedicationsViewModel(
     ) {
         val uid = auth.currentUser?.uid ?: return
         medsRepo.addOrUpdateMedication(uid, draft) {
-            loadMedications(onFinished)
+            loadMedications() // Reload the list from Firebase
+            onFinished()
         }
     }
 
     fun deleteMedication(id: String, onFinished: () -> Unit) {
         val uid = auth.currentUser?.uid ?: return
         medsRepo.deleteMedication(uid, id) {
-            loadMedications(onFinished)
+            loadMedications() // Reload the list from Firebase
+            onFinished()
         }
     }
 }

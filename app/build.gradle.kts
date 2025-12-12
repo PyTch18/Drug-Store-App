@@ -40,6 +40,8 @@ android {
     }
 }
 
+
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -63,7 +65,6 @@ dependencies {
     implementation("androidx.glance:glance-material3:1.0.0")
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation(libs.androidx.navigation.compose)
-    kotlin
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-auth")
@@ -72,4 +73,9 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.maplibre.gl:android-sdk:11.11.0")
+    implementation("org.maplibre.gl:android-plugin-annotation-v9:3.0.1")
+    implementation("com.mapbox.mapboxsdk:mapbox-sdk-geojson:7.9.0")
+    implementation("org.linphone:linphone-sdk-android:5.4+")
+    implementation(libs.coil.compose)
+
 }
